@@ -1,0 +1,6 @@
+# Ignore everything in this directory...
+/*
+# ...except the scripts, the README, and this file
+!*.sh
+!README.md
+!.gitignore
