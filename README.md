@@ -1,4 +1,4 @@
-# scripts/
+# Podman_run_script
 
 Utility scripts for everyday terminal work. Plain bash, no dependencies
 beyond standard Linux tools.
@@ -12,7 +12,7 @@ Currently contains:
 Make the scripts executable (already done, but re-run if you copy them):
 
 ```bash
-chmod +x ~/projects/scripts/*.sh
+chmod +x ~/projects/scripts/pods
 ```
 
 Optionally add the directory to your `PATH` so you can run them from anywhere:
