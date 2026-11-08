@@ -2,6 +2,7 @@
 /*
 # ...except the scripts, the README, and this file
 !*.sh
+!pods
 !README.md
 !.gitignore
 

@@ -5,7 +5,7 @@ beyond standard Linux tools.
 
 Currently contains:
 
-- [podman-pods.sh](#podman-pods) — interactive manager for podman container definitions
+- [pods](#pods) — interactive manager for podman container definitions
 
 ## Setup
 
@@ -22,18 +22,18 @@ echo 'export PATH="$HOME/projects/scripts:$PATH"' >> ~/.bashrc
 source ~/.bashrc
 ```
 
-After that, `podman-pods` works from any directory. Without the `PATH`
-change, run it as `./podman-pods.sh` from inside this folder.
+After that, `pods` works from any directory. Without the `PATH`
+change, run it as `./pods` from inside this folder.
 
 ---
 
-## podman-pods
+## pods
 
 Interactive manager for podman container definitions. Keeps everything in
 `podman.pods` (INI-style, hand-editable) in the script's own folder.
 
 ```
-Usage: podman-pods.sh
+Usage: pods
 ```
 
 No arguments — it's a menu-driven program.
@@ -86,7 +86,7 @@ where you can:
 
 In edit mode, pressing Enter at the name/image/command prompts keeps the
 current value. Renaming a pod is allowed (the section in `podman.pods` is
-updated).
+updated). After saving, you're returned to the main menu.
 
 ### Containers
 
@@ -119,6 +119,10 @@ If a container with the pod's name already exists, you're offered:
 Otherwise you choose **foreground** (`-it`, Enter) or **detached** (`d`,
 `-d`). The exact `podman run` command is printed before it runs.
 
+If a podman command fails (pull error, port in use, ...), the error is
+shown and you're returned to the menu — the script itself never exits
+because of a failed run.
+
 ### The config file
 
 `podman.pods` lives next to the script and looks like:
@@ -142,7 +146,7 @@ repeated. The file is hand-editable — just keep the format.
 - If podman isn't installed, you get a warning at startup. You can still
   create and edit definitions; only "run" is blocked, with a clear error.
 - Set `PODMAN_BIN` to point at a non-default podman binary:
-  `PODMAN_BIN=/usr/local/bin/podman ./podman-pods.sh`
+  `PODMAN_BIN=/usr/local/bin/podman ./pods`
 - `Ctrl-D` (EOF) exits cleanly at any prompt.
 
 ---

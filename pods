@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# podman-pods.sh — interactive manager for podman container definitions.
+# pods — interactive manager for podman container definitions.
 #
 # Keeps pod definitions in podman.pods (INI-style, hand-editable) next to
 # this script. From a menu you can run or edit saved pods, create a new
@@ -78,7 +78,7 @@ save_pods() {
   local tmp name p v e
   tmp="$(mktemp)"
   {
-    echo "# podman.pods — container definitions managed by podman-pods.sh"
+    echo "# podman.pods — container definitions managed by pods"
     echo "# One [name] section per pod. Hand-editable."
     echo "#   image=    container image (required)"
     echo "#   port=     host:container port mapping (repeatable)"
@@ -251,7 +251,8 @@ edit_pod() {
 run_pod() {
   local name="$1"
   if ! command -v "$PODMAN_BIN" >/dev/null 2>&1; then
-    die "'$PODMAN_BIN' not found. Install podman, or set PODMAN_BIN to the binary."
+    echo "Cannot run: '$PODMAN_BIN' not found. Install podman, or set PODMAN_BIN to the binary." >&2
+    return 0
   fi
 
   # If a container with this name already exists, deal with it.
@@ -262,12 +263,18 @@ run_pod() {
     ask c "[s]tart it, [r]emove and recreate, or [c]ancel" "c"
     case "$c" in
       s|S)
-        "$PODMAN_BIN" start "$name"
-        echo "Started. Follow with: $PODMAN_BIN logs -f $name"
+        if "$PODMAN_BIN" start "$name"; then
+          echo "Started. Follow with: $PODMAN_BIN logs -f $name"
+        else
+          echo "Failed to start '$name'." >&2
+        fi
         return 0
         ;;
       r|R)
-        "$PODMAN_BIN" rm -f "$name"
+        if ! "$PODMAN_BIN" rm -f "$name"; then
+          echo "Failed to remove '$name' — not recreating." >&2
+          return 0
+        fi
         ;;
       *)
         echo "Cancelled."
@@ -306,7 +313,12 @@ run_pod() {
 
   echo
   echo "Running: $PODMAN_BIN ${args[*]}"
-  "$PODMAN_BIN" "${args[@]}"
+  local rc=0
+  "$PODMAN_BIN" "${args[@]}" || rc=$?
+  if [ "$rc" -ne 0 ]; then
+    echo "podman exited with code $rc — see error above." >&2
+  fi
+  return 0
 }
 
 # --- container browser ----------------------------------------------------
@@ -414,7 +426,7 @@ pod_submenu() {
     ask c "Choice"
     case "$c" in
       r|R) run_pod "$name" ;;
-      e|E) edit_pod "$name" ;;
+      e|E) edit_pod "$name"; return 0 ;;
       b|B|q|Q) return 0 ;;
       *) echo "Invalid choice." ;;
     esac
