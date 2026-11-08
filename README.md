@@ -51,8 +51,9 @@ Lists saved pods by name (with their image):
 === Podman Pods ===
   1. myweb                (docker.io/library/nginx:latest)
   2. alpine-sleeper       (docker.io/library/alpine:3.20)
-  3. Create new pod
-  4. Exit
+  3. Show containers
+  4. Create new pod
+  5. Exit
 ```
 
 Pick a pod to get a sub-menu:
@@ -62,8 +63,8 @@ Pod: myweb (docker.io/library/nginx:latest)
   [r]un  [e]dit  [b]ack
 ```
 
-The last two options are always "Create new pod" and "Exit", numbered
-after the pods.
+The last three options are always "Show containers", "Create new pod",
+and "Exit", numbered after the pods.
 
 ### The walkthrough (create and edit)
 
@@ -86,6 +87,26 @@ where you can:
 In edit mode, pressing Enter at the name/image/command prompts keeps the
 current value. Renaming a pod is allowed (the section in `podman.pods` is
 updated).
+
+### Containers
+
+The **Show containers** option lists every running podman container on the
+system (not just the pods in `podman.pods`) with name, image, status, and
+ports. Stopped (exited) containers are listed below for reference.
+
+Select a running container to get a sub-menu:
+
+```
+Container: myweb
+  [s]top  [h]ell (open shell)  [b]ack
+```
+
+- **s** — stops the container (`podman stop`)
+- **h** — opens a shell inside it (`podman exec -it`). The script probes
+  for `/bin/bash` first and falls back to `/bin/sh`, so minimal images
+  like alpine work. Type `exit` in the container to leave.
+
+Press Enter at the container list to go back to the main menu.
 
 ### Running a pod
 

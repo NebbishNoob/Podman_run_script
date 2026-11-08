@@ -4,3 +4,7 @@
 !*.sh
 !README.md
 !.gitignore
+
+# Local-only files (never committed)
+CHANGELOG.md
+podman.pods

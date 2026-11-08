@@ -309,6 +309,86 @@ run_pod() {
   "$PODMAN_BIN" "${args[@]}"
 }
 
+# --- container browser ----------------------------------------------------
+containers_menu() {
+  if ! command -v "$PODMAN_BIN" >/dev/null 2>&1; then
+    die "'$PODMAN_BIN' not found. Install podman first."
+  fi
+
+  local names=() rows=() line choice sel stopped
+  while true; do
+    names=()
+    rows=()
+    while IFS= read -r line; do
+      if [ -n "$line" ]; then
+        names+=("${line%%$'\t'*}")
+        rows+=("$line")
+      fi
+    done < <("$PODMAN_BIN" ps --format $'{{.Names}}\t{{.Image}}\t{{.Status}}\t{{.Ports}}' 2>/dev/null)
+
+    echo
+    echo "=== Containers ==="
+    echo
+    if [ "${#names[@]}" -eq 0 ]; then
+      echo "No running containers."
+    else
+      local i=1
+      for line in "${rows[@]}"; do
+        printf "  %d. %s\n" "$i" "$line"
+        i=$((i + 1))
+      done
+    fi
+
+    stopped="$("$PODMAN_BIN" ps -a --filter status=exited --format '  {{.Names}}  ({{.Image}})  {{.Status}}' 2>/dev/null || true)"
+    if [ -n "$stopped" ]; then
+      echo
+      echo "Stopped:"
+      echo "$stopped"
+    fi
+
+    ask choice "Select a running container, or Enter to go back"
+    case "$choice" in
+      '') return 0 ;;
+      *[!0-9]*) echo "Invalid choice." ;;
+      *)
+        sel=$((10#$choice))
+        if [ "$sel" -ge 1 ] && [ "$sel" -le "${#names[@]}" ]; then
+          container_submenu "${names[$((sel - 1))]}"
+        else
+          echo "Number out of range."
+        fi
+        ;;
+    esac
+  done
+}
+
+container_submenu() {
+  local name="$1" c shell
+  while true; do
+    echo
+    echo "Container: $name"
+    echo "  [s]top  [h]ell (open shell)  [b]ack"
+    ask c "Choice"
+    case "$c" in
+      s|S)
+        "$PODMAN_BIN" stop "$name" || die "Failed to stop $name"
+        echo "Stopped $name."
+        return 0
+        ;;
+      h|H)
+        if "$PODMAN_BIN" exec "$name" test -x /bin/bash 2>/dev/null; then
+          shell=/bin/bash
+        else
+          shell=/bin/sh
+        fi
+        "$PODMAN_BIN" exec -it "$name" "$shell" || echo "Shell exited with an error."
+        ;;
+      b|B|q|Q) return 0 ;;
+      *) echo "Invalid choice." ;;
+    esac
+  done
+}
+
 # --- menu -----------------------------------------------------------------
 show_menu() {
   local i=1 name
@@ -318,6 +398,8 @@ show_menu() {
     printf "  %d. %-20s (%s)\n" "$i" "$name" "${POD_IMAGE[$name]:-}"
     i=$((i + 1))
   done
+  printf "  %d. Show containers\n" "$i"
+  i=$((i + 1))
   printf "  %d. Create new pod\n" "$i"
   printf "  %d. Exit\n" "$((i + 1))"
   echo
@@ -365,8 +447,10 @@ main() {
         if [ "$sel" -ge 1 ] && [ "$sel" -le "$n" ]; then
           pod_submenu "${POD_NAMES[$((sel - 1))]}"
         elif [ "$sel" -eq $((n + 1)) ]; then
-          create_pod
+          containers_menu
         elif [ "$sel" -eq $((n + 2)) ]; then
+          create_pod
+        elif [ "$sel" -eq $((n + 3)) ]; then
           exit 0
         else
           echo "Invalid choice."
